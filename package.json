@@ -1,0 +1,27 @@
+{
+  "name": "DictionaryScraper",
+  "version": "1.0.0",
+  "description": "",
+  "main": "r.js",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.2",
+    "headless-chrome-crawler": "^1.8.0",
+    "node-html-parser": "^1.1.10",
+    "puppeteer-core": "^1.10.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/piscium2010/DictionaryScraper.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/piscium2010/DictionaryScraper/issues"
+  },
+  "homepage": "https://github.com/piscium2010/DictionaryScraper#readme"
+}
