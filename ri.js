@@ -1,28 +1,34 @@
 const puppeteer = require('puppeteer');
 const cheerio = require('cheerio');
-
+const fs = require('fs');
+const roman = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV']
 let $
 
 (async () => {
   try {
+    if(fs.existsSync('dic.txt')){
+      fs.writeFileSync('dic.txt','')
+    }
+
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
-    await page.goto('https://www.ldoceonline.com/dictionary/bee', { waitUntil: 'domcontentloaded' })
-    await page.screenshot({ path: 'dic.png' });
+    await page.goto('https://www.ldoceonline.com/dictionary/wear', { waitUntil: 'domcontentloaded' })
+    //await page.screenshot({ path: 'dic.png' });
     const html = await page.content()
 
     $ = cheerio.load(html)
-    $('.dictentry').each(function () {
+    $('.dictentry').each(function (i) {
       const entry = $(this)
       const result = parseEntry(entry)
-      //console.log(`result`, result)
+      if( i == 0) {
+        let simpleForms = parseFormTable($('table[class=simpleForm]'))
+        let continuousForms = parseFormTable($('table[class=continuousForm]'))
+        Object.assign(result, {forms: simpleForms.concat(continuousForms)})
+      }
+      writeEntry(result)
+      //console.log(`result`,result)
       return result
     })
-    let simpleForms = parseFormTable($('table[class=simpleForm]'))
-    let continuousForms = parseFormTable($('table[class=continuousForm]'))
-    console.log(`simpleForms`,simpleForms)
-    console.log(`continuousForms`,continuousForms)
-
     await browser.close();
   } catch (err) {
     console.log(`err`, err)
@@ -32,7 +38,7 @@ let $
 
 function text(selector, container) {
   let element = container.find(selector)
-  return element && element.text ? element.text() : ''
+  return element && element.text ? element.text().trim() : ''
 }
 
 function map(selector, fn, container) {
@@ -51,7 +57,7 @@ function parseEntry(entry) {
     let sentence = $(this)
     let def = text('.DEF', sentence)
     let gram = text('.GRAM', sentence)
-    let examples = map('.EXAMPLE', function () { return ($(this).text()) }, sentence)
+    let examples = map('.EXAMPLE', function () { return ($(this).text().trim().replace('\n','')) }, sentence)
     return { gram, registerlab, def, examples }
   }, entry)
 
@@ -61,7 +67,7 @@ function parseEntry(entry) {
     pos ? { pos } : null,
     inflections ? { inflections } : null,
     gram ? { gram } : null,
-    { sentences }
+    { sentences: sentences.filter(s => s.examples.length > 0) }
   )
 }
 
@@ -75,4 +81,34 @@ function parseFormTable(table) {
   let verbForms = table ? map('tr', mapper, table) : []
   let distinct = Array.from(new Set(verbForms))
   return distinct.filter(i => i)
+}
+
+function writeEntry(entry) {
+  const { 
+    word,
+    pronounce = '',
+    pos = '',
+    inflections = '',
+    gram = '',
+    sentences = [],
+    forms = []
+  } = entry
+
+  let words = [word].concat(forms)
+  words = Array.from(new Set(words))
+  //console.log(`forms`,words)
+
+  words.forEach(function(w, index){
+    let _forms = pos == 'verb' && forms.length > 0 ? `[${forms.slice(1).join(' ')}]`: ''
+    let line = `${w}\t${pronounce}${pos}${_forms}${inflections}${gram}`
+    sentences.forEach((s,j) => {
+      let { gram = '', registerlab = '', def = '', examples = [] } = s
+      line += `\\n\\n${roman[j]} ${gram}${registerlab}\\n${def}`
+      examples.forEach((example,n) => {
+        line += `\\n${n + 1}. ${example}`
+      })
+    })
+    fs.appendFileSync('dic.txt', line + '\n')
+    //console.log(`line`,line)
+  })
 }
