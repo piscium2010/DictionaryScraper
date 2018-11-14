@@ -1,13 +1,13 @@
 const puppeteer = require('puppeteer');
 const cheerio = require('cheerio');
 const fs = require('fs');
-const roman = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV']
+const roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV']
 let $
 
 (async () => {
   try {
-    if(fs.existsSync('dic.txt')){
-      fs.writeFileSync('dic.txt','')
+    if (fs.existsSync('dic.txt')) {
+      fs.writeFileSync('dic.txt', '')
     }
 
     const browser = await puppeteer.launch();
@@ -20,10 +20,10 @@ let $
     $('.dictentry').each(function (i) {
       const entry = $(this)
       const result = parseEntry(entry)
-      if( i == 0) {
+      if (i == 0) {
         let simpleForms = parseFormTable($('table[class=simpleForm]'))
         let continuousForms = parseFormTable($('table[class=continuousForm]'))
-        Object.assign(result, {forms: simpleForms.concat(continuousForms)})
+        Object.assign(result, { forms: simpleForms.concat(continuousForms) })
       }
       writeEntry(result)
       //console.log(`result`,result)
@@ -55,10 +55,11 @@ function parseEntry(entry) {
   const registerlab = text('.REGISTERLAB', entry)
   const sentences = map('.Sense', function () {
     let sentence = $(this)
+    let lexunit = text('.LEXUNIT', sentence)
     let def = text('.DEF', sentence)
     let gram = text('.GRAM', sentence)
-    let examples = map('.EXAMPLE', function () { return ($(this).text().trim().replace('\n','')) }, sentence)
-    return { gram, registerlab, def, examples }
+    let examples = map('.EXAMPLE', function () { return ($(this).text().trim().replace('\n', '')) }, sentence)
+    return { gram, registerlab, lexunit, def, examples }
   }, entry)
 
   return Object.assign({},
@@ -72,7 +73,7 @@ function parseEntry(entry) {
 }
 
 function parseFormTable(table) {
-  let mapper = function() {
+  let mapper = function () {
     let tr = $(this)
     let aux = text('.aux', tr)
     let form = text('.verb_form', tr)
@@ -84,7 +85,7 @@ function parseFormTable(table) {
 }
 
 function writeEntry(entry) {
-  const { 
+  const {
     word,
     pronounce = '',
     pos = '',
@@ -96,15 +97,23 @@ function writeEntry(entry) {
 
   let words = [word].concat(forms)
   words = Array.from(new Set(words))
-  //console.log(`forms`,words)
 
-  words.forEach(function(w, index){
-    let _forms = pos == 'verb' && forms.length > 0 ? `[${forms.slice(1).join(' ')}]`: ''
+  words.forEach(function (w, index) {
+    let _forms = pos == 'verb' && forms.length > 0 ? `[${forms.slice(1).join(' ')}]` : ''
     let line = `${w}\t${pronounce}${pos}${_forms}${inflections}${gram}`
-    sentences.forEach((s,j) => {
-      let { gram = '', registerlab = '', def = '', examples = [] } = s
-      line += `\\n\\n${roman[j]} ${gram}${registerlab}\\n${def}`
-      examples.forEach((example,n) => {
+
+    sentences.forEach((s, j) => {
+      let {
+        gram = '',
+        registerlab = '',
+        lexunit = '',
+        def = '',
+        examples = []
+      } = s
+      
+      line += `\\n\\n${roman[j]} ${gram}${registerlab}\\n${lexunit ? lexunit + ';' : lexunit} ${def}`
+
+      examples.forEach((example, n) => {
         line += `\\n${n + 1}. ${example}`
       })
     })
