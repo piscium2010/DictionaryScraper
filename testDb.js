@@ -1,5 +1,5 @@
 const db = require('./db')
 
-console.log(`db`,db)
+console.log(`db`, db)
 
-db.insert('words', {word:'world_no_safe'})
+db.upSert('words', { word: 'test' }, { word: 'test' })
