@@ -16,23 +16,23 @@ function close() {
   }
 }
 
-function withDb(func) {
-  let exec = () => {
-    const testDb = mongoDb.db('test')
-    return func(testDb, close)
-  }
+// function withDb(func) {
+//   let exec = () => {
+//     const testDb = mongoDb.db('test')
+//     return func(testDb, close)
+//   }
 
-  if (mongoDb) {
-    console.log(`reuse`)
-    return exec()
-  } else {
-    MongoClient.connect(url, function (err, mongo) {
-      console.log(`connect`)
-      mongoDb = mongo
-      return exec()
-    })
-  }
-}
+//   if (mongoDb) {
+//     console.log(`reuse`)
+//     return exec()
+//   } else {
+//     MongoClient.connect(url, function (err, mongo) {
+//       console.log(`connect`)
+//       mongoDb = mongo
+//       return exec()
+//     })
+//   }
+// }
 
 async function connect() {
   return new Promise((resolve, reject) => {
@@ -49,14 +49,14 @@ async function connect() {
   })
 }
 
+
 async function upSert(collectionName, document, id, autoClose = true) {
   let db = await connect()
-
   return new Promise((resolve, reject) => {
     let callback = (err, result) => {
       if (err) { reject(err) }
-      //if (autoClose) { close() }
-      console.log(`resolve`)
+      if (autoClose) { close() }
+      //console.log(`resolve`)
       resolve(result)
     }
 
@@ -75,7 +75,6 @@ async function upSert(collectionName, document, id, autoClose = true) {
     //   // }
     // })
   })
-
 }
 
 module.exports = {

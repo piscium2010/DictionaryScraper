@@ -4,6 +4,8 @@ const cheerio = require('cheerio');
 const fs = require('fs');
 const path = require('path');
 const base = 'https://www.economist.com';
+const br = require('./breakwords');
+
 
 (async () => {
   try {
@@ -12,13 +14,15 @@ const base = 'https://www.economist.com';
 
     await page.goto(base, { waitUntil: 'domcontentloaded' })
     const html = await page.content()
+    console.log(`fetched page`,)
     const $ = cheerio.load(html)
     const href = $('.teaser__link').attr('href')
 
     const articalUrl = path.join(base, href)
     await page.goto(articalUrl, { waitUntil: 'domcontentloaded' })
     const articalHtml = await page.content()
-    breaktowords(articalHtml)
+    console.log(`fetched artical`,)
+    await breakwords(articalHtml)
 
     await browser.close()
   } catch (err) {
@@ -27,15 +31,17 @@ const base = 'https://www.economist.com';
 
 })()
 
-function breaktowords(html) {
+async function breakwords(html) {
   const $ = cheerio.load(html)
   const blog = $('.blog-post__text').text()
-  const wordRegex = /\w{1,}/g
+  const words = br.breakwords(blog)
+  console.log(`fetch ${words.length} words`)
 
-  const words = blog.match(wordRegex)
-  words.forEach(w => {
-    let document = { word: w.toLowerCase() }
-    let id = { word: w.toLowerCase() }
-    db.upSert('words', document, id)
-  })
+  for (let i = 0; i < words.length; i++) {
+        let w = words[i]
+        let document = { word: w.toLowerCase(), status: 0 }
+        let id = { word: w.toLowerCase() }
+        await db.upSert('words', document, id, false/* autoClose */)
+  }
+  db.close()
 }
