@@ -1,4 +1,5 @@
 const puppeteer = require('puppeteer');
+const db = require('./db')
 const cheerio = require('cheerio');
 const fs = require('fs');
 const roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV']
@@ -6,34 +7,30 @@ let $
 
 (async () => {
   try {
-    if (fs.existsSync('dic.txt')) {
-      fs.writeFileSync('dic.txt', '')
-    }
+    if (fs.existsSync('dic.txt')) { fs.writeFileSync('dic.txt', '') }
 
+    const cursor = await db.find('words', { status: 0 }, false /**auto close */)
+    const words = await cursor.toArray()
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
-    await page.goto('https://www.ldoceonline.com/dictionary/wear', { waitUntil: 'domcontentloaded' })
-    //await page.screenshot({ path: 'dic.png' });
-    const html = await page.content()
 
-    $ = cheerio.load(html)
-    $('.dictentry').each(function (i) {
-      const entry = $(this)
-      const result = parseEntry(entry)
-      if (i == 0) {
-        let simpleForms = parseFormTable($('table[class=simpleForm]'))
-        let continuousForms = parseFormTable($('table[class=continuousForm]'))
-        Object.assign(result, { forms: simpleForms.concat(continuousForms) })
-      }
-      writeEntry(result)
-      //console.log(`result`,result)
-      return result
-    })
-    await browser.close();
+    for (w of words) {
+      let url = `https://www.ldoceonline.com/dictionary/${w.word}`
+      console.log(`url`, url)
+      await page.goto(url, { waitUntil: 'domcontentloaded' })
+      //await page.screenshot({ path: 'dic.png' });
+      const html = await page.content()
+      parsePage(html)
+      sleep(1000)
+    }
+
+    browser.close();
+    db.close();
+    process.exit()
   } catch (err) {
     console.log(`err`, err)
-  }
-
+    process.exit()
+  } 
 })();
 
 function text(selector, container) {
@@ -44,6 +41,20 @@ function text(selector, container) {
 function map(selector, fn, container) {
   let elements = container.find(selector)
   return elements ? elements.map(fn).get() : []
+}
+
+function parsePage(html) {
+  $ = cheerio.load(html)
+  $('.dictentry').each(function (i) {
+    const entry = $(this)
+    const result = parseEntry(entry)
+    if (i == 0) {
+      let simpleForms = parseFormTable($('table[class=simpleForm]'))
+      let continuousForms = parseFormTable($('table[class=continuousForm]'))
+      Object.assign(result, { forms: simpleForms.concat(continuousForms) })
+    }
+    writeEntry(result)
+  })
 }
 
 function parseEntry(entry) {
@@ -110,7 +121,7 @@ function writeEntry(entry) {
         def = '',
         examples = []
       } = s
-      
+
       line += `\\n\\n${roman[j]} ${gram}${registerlab}\\n${lexunit ? lexunit + ';' : lexunit} ${def}`
 
       examples.forEach((example, n) => {
@@ -118,6 +129,10 @@ function writeEntry(entry) {
       })
     })
     fs.appendFileSync('dic.txt', line + '\n')
-    //console.log(`line`,line)
   })
+}
+
+function sleep(time) {
+  var stop = new Date().getTime();
+  while (new Date().getTime() < stop + time) { ; }
 }

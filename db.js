@@ -11,8 +11,9 @@ let mongoDb
 
 function close() {
   if (mongoDb) {
+    console.log(`try closing`)
     mongoDb.close()
-    console.log(`close`)
+    console.log(`closed`)
   }
 }
 
@@ -49,6 +50,19 @@ async function connect() {
   })
 }
 
+async function find(collectionName, document, autoClose = true) {
+  let db = await connect()
+  return new Promise((resolve, reject) => {
+    let callback = (err, result) => {
+      if (err) { reject(err) }
+      if (autoClose) { close() }
+      resolve(result)
+    }
+
+    let collection = db.collection(collectionName)
+    collection.find(document, callback)
+  })
+} 
 
 async function upSert(collectionName, document, id, autoClose = true) {
   let db = await connect()
@@ -79,5 +93,6 @@ async function upSert(collectionName, document, id, autoClose = true) {
 
 module.exports = {
   upSert,
+  find,
   close
 }

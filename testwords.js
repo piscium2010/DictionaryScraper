@@ -9,6 +9,9 @@ In the long run it may be futile, too. Today America has the edge over China in 
 Moreover, China’s bid to become a global semiconductor powerhouse is propitiously timed. For decades the chip industry has been driven forward by Moore’s law, under which the capabilities of a chip of a given size double every two years. But Moore’s law is reaching its physical limits. As everyone jumps to new technologies, from quantum computing to specialised ai chips, China has a rare chance to catch up.
 The right approach for America, therefore, has three strands. The first is to work with its allies in Europe and Asia to keep pushing back against unfair Chinese practices (such as forced tech transfer and intellectual-property theft) at the World Trade Organisation, and to screen out inward Chinese investments when security justifies it. The second is to foster domestic innovation. More government funding is already going into chip research; greater openness to talent is needed. And the third is to prepare for a world in which Chinese chips are more powerful and pervasive. That means, among other things, developing proper testing procedures to ensure the security of Chinese-made products; and tightening up on data-handling standards so that information is not being sprayed about so carelessly. Measures such as these will not make the headlines at the g20. But they will do more to shape the world in the years ahead.`
 
+const wII = 'a because'
+
 module.exports = {
-    words
+    words,
+    wII
 }

@@ -12,6 +12,8 @@ const br = require('./breakwords');
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
 
+    page.setDefaultNavigationTimeout(0)
+
     await page.goto(base, { waitUntil: 'domcontentloaded' })
     const html = await page.content()
     console.log(`fetched page`,)
