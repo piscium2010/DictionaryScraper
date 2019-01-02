@@ -1,4 +1,4 @@
-const db = require('./db')
+const db = require('./db');
 const puppeteer = require('puppeteer');
 const cheerio = require('cheerio');
 const fs = require('fs');
@@ -23,7 +23,7 @@ const br = require('./breakwords');
     const articalUrl = path.join(base, href)
     await page.goto(articalUrl, { waitUntil: 'domcontentloaded' })
     const articalHtml = await page.content()
-    console.log(`fetched artical`,)
+    console.log(`fetched artical - `, articalUrl)
     await breakwords(articalHtml)
 
     await browser.close()
