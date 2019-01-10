@@ -12,11 +12,12 @@ const br = require('./breakwords');
         const page = await browser.newPage();
 
         page.setDefaultNavigationTimeout(0)
-
         await page.goto(base, { waitUntil: 'domcontentloaded' })
+        
         const html = await page.content()
         console.log(`fetched page`)
         const $ = cheerio.load(html)
+
         let links = new Set()
         $('a').each(function (i, elem) {
             let href = $(this).attr('href')

@@ -13,37 +13,64 @@ const br = require('./breakwords');
     const page = await browser.newPage();
 
     page.setDefaultNavigationTimeout(0)
-
     await page.goto(base, { waitUntil: 'domcontentloaded' })
+
     const html = await page.content()
-    console.log(`fetched page`,)
+    console.log(`fetched page`)
     const $ = cheerio.load(html)
-    const href = $('.teaser__link').attr('href')
 
-    const articalUrl = path.join(base, href)
-    await page.goto(articalUrl, { waitUntil: 'domcontentloaded' })
-    const articalHtml = await page.content()
-    console.log(`fetched artical - `, articalUrl)
-    await breakwords(articalHtml)
+    let links = new Set()
+    $('a').each(function (i, elem) {
+      let href = $(this).attr('href')
+      let regEx = /^\//;
+      let hasDate = /\d\d\d\d\/\d\d\/\d\d/;
+      if (href && regEx.test(href) && hasDate.test(href)) {
+        links.add(path.join(base, href))
+      }
+    });
+    //let queue = new Array(links)
+    //console.log(`queue`, queue)
 
-    await browser.close()
+    //const href = $('.teaser__link').attr('href')
+    let words = new Set()
+    for (let link of links) {
+      await page.goto(link, { waitUntil: 'domcontentloaded' })
+      const articalHtml = await page.content()
+      console.log(`fetched artical - `, link)
+      for(let w of breakwords(articalHtml)) {
+        words.add(w)
+      }
+    }
+    console.log(`size`,words.size)
+    browser.close()
+    await saveWords(Array.from(words))
+    process.exit(0)
   } catch (err) {
     console.log(`err`, err)
+    process.exit(1)
   }
 
 })()
 
-async function breakwords(html) {
+function breakwords(html) {
   const $ = cheerio.load(html)
-  const blog = $('.blog-post__text').text()
-  const words = br.breakwords(blog)
-  console.log(`fetch ${words.length} words`)
+  let text = ''
 
+  $('p').each(function () {
+    text += $(this).text() + ','
+  })
+
+  let words = br.breakwords(text)
+  //console.log(`fetch ${words.length} words`)
+  return words
+}
+
+async function saveWords(words) {
   for (let i = 0; i < words.length; i++) {
-        let w = words[i]
-        let document = { word: w.toLowerCase(), status: 0 }
-        let id = { word: w.toLowerCase() }
-        await db.upSert('words', document, id, false/* autoClose */)
+    let w = words[i]
+    let document = { word: w.toLowerCase(), status: 0 }
+    let id = { word: w.toLowerCase() }
+    await db.upSert('words', document, id, false/* autoClose */)
   }
   db.close()
 }
