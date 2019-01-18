@@ -26,9 +26,19 @@ const browser = await puppeteer.connect({browserWSEndpoint: webSocketDebuggerUrl
 await delay(10000)
 const pages = await browser.pages()
 const page = pages[0]
-const frame = await page.mainFrame()
-const divsCounts = await frame.$$('#kindleReader_book_container')
-console.log(`html`,divsCounts)
+const iframe = page.mainFrame().childFrames()[0]
+
+for(const contentFrame of iframe.childFrames()) {
+    //let id = await contentFrame.content()
+    let id = await contentFrame.$eval('body', el => el.textContent)
+    console.log(`id`,id)  
+}
+
+//let html = await iframe.$eval('#kindleReader_book_container', element => element.textContent)
+
+//console.log(`iframe`,iframe.url())
+//console.log(`html`,html)
+
 
 // Run Lighthouse.
 //const {lhr} = await lighthouse(URL, opts, null);
