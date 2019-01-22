@@ -1,6 +1,5 @@
 const chromeLauncher = require('chrome-launcher');
 const puppeteer = require('puppeteer');
-const lighthouse = require('lighthouse');
 const request = require('request');
 const util = require('util');
 const br = require('./breakwords');
@@ -58,10 +57,6 @@ while(nextPageBtn[1] && i < 10) {
 }
 
 await sw.close()
-
-// Run Lighthouse.
-//const {lhr} = await lighthouse(URL, opts, null);
-//console.log(`Lighthouse scores: ${Object.values(lhr.categories).map(c => `${c.title} ${c.score}`).join(', ')}`);
 await browser.disconnect();
 //await chrome.kill();
 })();
