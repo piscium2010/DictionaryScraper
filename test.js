@@ -3,6 +3,9 @@ const puppeteer = require('puppeteer');
 const lighthouse = require('lighthouse');
 const request = require('request');
 const util = require('util');
+const br = require('./breakwords');
+const sw = require('./savewords');
+
 (async() => {
 //const URL = 'https://www.chromestatus.com/features';
 const URL = 'https://read.amazon.com/';
@@ -27,18 +30,34 @@ await delay(10000)
 const pages = await browser.pages()
 const page = pages[0]
 const iframe = page.mainFrame().childFrames()[0]
+const nextPageBtn = await iframe.$$(".kindleReader_arrowBtn")
+//const nextPageBtn = await iframe.$("div[title='Next Page']")  // kindleReader_arrowBtn
+await nextPageBtn[1].click()
+let i = 0
 
-for(const contentFrame of iframe.childFrames()) {
+while(nextPageBtn[1] && i < 10) {
+  for(const contentFrame of iframe.childFrames()) {
     //let id = await contentFrame.content()
-    let id = await contentFrame.$eval('body', el => el.textContent)
-    console.log(`id`,id)  
+    let words = new Set()
+    let text = await contentFrame.$eval('body', el => el.textContent)
+    for(let w of br.breakwords(text)) {
+      words.add(w)
+    }
+    try {
+      await sw.saveWords(Array.from(words))
+    } catch(e) {
+      sw.close()      
+    }
+    //let 
+    //console.log(`id`,text[0])
+  }
+  const nextPageBtn = await iframe.$$(".kindleReader_arrowBtn")
+  await nextPageBtn[1].click()
+  console.log(`click`,  i++)
+  await delay(3000)
 }
 
-//let html = await iframe.$eval('#kindleReader_book_container', element => element.textContent)
-
-//console.log(`iframe`,iframe.url())
-//console.log(`html`,html)
-
+await sw.close()
 
 // Run Lighthouse.
 //const {lhr} = await lighthouse(URL, opts, null);
